@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\Resource\VoiceGPS\</OutputPath>
+    <OutputPath>..\..\_Resource\VoiceGPS\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -51,6 +51,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>del /f "..\..\resource\voicegps\VoiceGPS_FiveM.Client.net.pdb"</PostBuildEvent>
+    <PostBuildEvent>del /f "..\..\_resource\voicegps\VoiceGPS_FiveM.Client.net.pdb"</PostBuildEvent>
   </PropertyGroup>
 </Project>

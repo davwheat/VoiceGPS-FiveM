@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using System.Threading.Tasks;
@@ -10,9 +11,10 @@ namespace VoiceGPS_FiveM.Client
     {
         private static Ped _playerPed;
 
+        // Default volume (between 0.1 and 1.0)
         private double _audioVolume = 0.7;
 
-        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled;
+        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
         private bool _justPlayedArrived = true;
 
         private int _lastDirection;
@@ -21,35 +23,24 @@ namespace VoiceGPS_FiveM.Client
         {
             Chat("VGPS Loaded");
             EventHandlers.Add("vgps:toggleVGPS", new Action(ToggleVgps));
-            //EventHandlers.Add("vgps:adjustVolume", new Action<List<object>>(ChangeVolume));
+
+            // UNCOMMENT BELOW LINE TO REMOVE THE WELCOME MESSAGE
+            //_welcomeShowed = true;
 
             Tick += OnTick;
-
-            Chat("^2This server uses VoiceGPS!");
-            Chat("^2Created by ^1github.com/davwheat");
-            Chat("^2Toggle VoiceGPS on and off using ^1/vgps");
 
             _playerPed = GetPlayerPed();
         }
 
-        //void ChangeVolume(List<object> args)
-        //{
-        //    if (!double.TryParse(args[0].ToString(), out var volume)) {
-        //        ShowNotification("~r~VoiceGPS volume must be a valid number between 1.0 and 0.0!");
-        //        return;
-        //    }
-
-        //    if (volume > 1.0D || volume < 0.0D)
-        //    {
-        //        ShowNotification("~r~VoiceGPS volume must be a valid number between 1.0 and 0.0!");
-        //        return;
-        //    }
-
-        //    _audioVolume = volume;
-        //}
-
         private async Task OnTick()
         {
+            if (!_welcomeShowed)
+            {
+                ShowNotification("~b~VoiceGPS~w~ | ~o~by github.com/davwheat");
+                ShowNotification("~b~To enable GPS speech, type ~o~/vgps");
+                _welcomeShowed = true;
+            }
+
             if (Game.IsControlJustReleased(1, Control.DropAmmo))
             {
                 ToggleVgps();

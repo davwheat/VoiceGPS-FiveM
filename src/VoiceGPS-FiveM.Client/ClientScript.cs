@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using System.Threading.Tasks;
@@ -51,7 +50,7 @@ namespace VoiceGPS_FiveM.Client
 
         private async Task OnTick()
         {
-            if (Game.IsControlJustPressed(1, Control.DropAmmo))
+            if (Game.IsControlJustReleased(1, Control.DropAmmo))
             {
                 ToggleVgps();
             }
@@ -69,7 +68,7 @@ namespace VoiceGPS_FiveM.Client
                         await Delay(2000);
                     }
 #if DEBUG
-                    //Chat("a");
+                    Chat("a");
 #endif
 
                     _playedStartDriveAudio = false;
@@ -82,7 +81,7 @@ namespace VoiceGPS_FiveM.Client
                 if (!_playedStartDriveAudio)
                 {
 #if DEBUG
-                    //Chat("b");
+                    Chat("b");
 #endif
                     PlayAudio("start");
                     await Delay(2600);
@@ -176,6 +175,8 @@ namespace VoiceGPS_FiveM.Client
 
                 _lastDirection = dir;
                 _justPlayedArrived = true;
+
+                ShowNotification(DirectionToString(dir));
             }
 
         }
@@ -209,6 +210,7 @@ namespace VoiceGPS_FiveM.Client
 
         private void PlayDirectionAudio(int dir)
         {
+            Chat("Attempting to play sound.");
             switch (dir)
             {
                 default:

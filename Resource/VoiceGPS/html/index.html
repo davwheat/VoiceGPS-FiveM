@@ -1,0 +1,20 @@
+<html>
+
+<head>
+
+    <script src="nui://game/ui/jquery.js"></script>
+    <script>
+        var audioPlayer = null;
+        // Listen for NUI Messages.
+        window.addEventListener('message', function (event) {
+            // Check for playSound transaction
+            if (event.data.type == "playGPSSound") {
+                audioPlayer = new Audio("./audio/" + event.data.audioFile + ".ogg");
+                audioPlayer.volume = event.data.volume;
+                audioPlayer.play();
+            }
+        });
+    </script>
+</head>
+
+</html>

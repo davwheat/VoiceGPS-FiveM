@@ -10,19 +10,28 @@ namespace VoiceGPS_FiveM.Client
     public class ClientScript : BaseScript
     {
         private static Ped _playerPed;
+        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
+        private bool _justPlayedArrived = true;
+        private int _lastDirection;
+
+        // User editable variables
 
         // Default volume (between 0.1 and 1.0)
         private double _audioVolume = 0.7;
 
-        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
-        private bool _justPlayedArrived = true;
+        private const Control ToggleVGPSKeybind = Control.DropAmmo; // F10
+        private const bool IsKeybindEnabled = true;
 
-        private int _lastDirection;
+        private const bool IsCommandEnabled = true;
+
 
         public ClientScript()
         {
             Chat("VGPS Loaded");
-            EventHandlers.Add("vgps:toggleVGPS", new Action(ToggleVgps));
+            EventHandlers.Add("vgps:toggleVGPS",
+                IsCommandEnabled
+                    ? new Action(ToggleVgps)
+                    : new Action(() => ShowNotification("~r~The command has been disabled. Please use the set keybind instead.")));
 
             // UNCOMMENT BELOW LINE TO REMOVE THE WELCOME MESSAGE
             //_welcomeShowed = true;
@@ -41,7 +50,7 @@ namespace VoiceGPS_FiveM.Client
                 _welcomeShowed = true;
             }
 
-            if (Game.IsControlJustReleased(1, Control.DropAmmo))
+            if (IsKeybindEnabled && Game.IsControlJustReleased(1, ToggleVGPSKeybind))
             {
                 ToggleVgps();
             }

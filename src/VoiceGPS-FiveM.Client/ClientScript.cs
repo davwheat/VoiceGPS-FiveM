@@ -39,70 +39,6 @@ namespace VoiceGPS_FiveM.Client
             Tick += OnTick;
         }
 
-        private Tuple<string, string> GetStreetNameForDirection(Vector3 playerPos, int heading, int distance)
-        {
-            // North = Y+
-            // South = Y-
-            // East = X+
-            // West = X-
-
-            // if heading = 45, 
-
-            float xMult = 0;
-            float yMult = 0;
-
-            if (heading > 0 && heading <= 90)
-            {
-                xMult = heading / 90;
-                yMult = (90 - heading) / 90;
-            }
-            else if (heading > 90 && heading <= 180)
-            {
-                heading -= 90;
-                xMult = heading / 90;
-                yMult = (90 - heading) / -90;
-            }
-            else if (heading > 180 && heading <= 270)
-            {
-                heading -= 90;
-                xMult = heading / -90;
-                yMult = (90 - heading) / -90;
-            }
-            else if ((heading > 270 && heading <= 360) || heading == 0) // 0 and 360 are equal
-            {
-                heading -= 90;
-                xMult = heading / -90;
-                yMult = (90 - heading) / 90;
-            }
-
-            var roadPositionXY = new Vector2(playerPos.X + distance * xMult, playerPos.Y + distance * yMult);
-
-            float roadGroundZ = -1;
-            API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
-            if (roadGroundZ == -1F)
-                return null;
-
-            var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
-
-            var streetHash = new uint();
-            var streetXingHash = new uint();
-            API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);
-
-            var street = API.GetStreetNameFromHashKey(streetHash);
-            string streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
-
-            return new Tuple<string, string>(street, streetXing);
-        }
-
-        private string ConvertStreetNameToAudioFileName(string streetName)
-        {
-            streetName = streetName.ToLower();
-            streetName = streetName.Replace(' ', '_');
-            streetName = streetName.Replace('\'', '-');
-
-            return streetName;
-        }
-
         private async Task OnTick()
         {
             _playerPed = GetPlayerPed();
@@ -386,6 +322,72 @@ namespace VoiceGPS_FiveM.Client
 #endif
 
             API.SendNuiMessage(json);
+        }
+
+
+
+        private Tuple<string, string> GetStreetNameForDirection(Vector3 playerPos, int heading, int distance)
+        {
+            // North = Y+
+            // South = Y-
+            // East = X+
+            // West = X-
+
+            // if heading = 45, 
+
+            float xMult = 0;
+            float yMult = 0;
+
+            if (heading > 0 && heading <= 90)
+            {
+                xMult = heading / 90;
+                yMult = (90 - heading) / 90;
+            }
+            else if (heading > 90 && heading <= 180)
+            {
+                heading -= 90;
+                xMult = heading / 90;
+                yMult = (90 - heading) / -90;
+            }
+            else if (heading > 180 && heading <= 270)
+            {
+                heading -= 90;
+                xMult = heading / -90;
+                yMult = (90 - heading) / -90;
+            }
+            else if ((heading > 270 && heading <= 360) || heading == 0) // 0 and 360 are equal
+            {
+                heading -= 90;
+                xMult = heading / -90;
+                yMult = (90 - heading) / 90;
+            }
+
+            var roadPositionXY = new Vector2(playerPos.X + distance * xMult, playerPos.Y + distance * yMult);
+
+            float roadGroundZ = -1;
+            API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
+            if (roadGroundZ == -1F)
+                return null;
+
+            var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
+
+            var streetHash = new uint();
+            var streetXingHash = new uint();
+            API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);
+
+            var street = API.GetStreetNameFromHashKey(streetHash);
+            string streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
+
+            return new Tuple<string, string>(street, streetXing);
+        }
+
+        private string ConvertStreetNameToAudioFileName(string streetName)
+        {
+            streetName = streetName.ToLower();
+            streetName = streetName.Replace(' ', '_');
+            streetName = streetName.Replace('\'', '-');
+
+            return streetName;
         }
     }
 }

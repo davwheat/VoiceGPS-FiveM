@@ -17,13 +17,13 @@ namespace VoiceGPS_FiveM.Server
                 TriggerClientEvent(player, "vgps:toggleVGPS");
             }), false);
             
-            RegisterCommand("vgpsvol", new Action<int, List<object>, string>((source, arguments, raw) =>
-            {
-                var pl = new PlayerList();
-                var player = pl[source];
+            //RegisterCommand("vgpsvol", new Action<int, List<object>, string>((source, arguments, raw) =>
+            //{
+            //    var pl = new PlayerList();
+            //    var player = pl[source];
 
-                TriggerClientEvent(player, "vgps:adjustVolume", arguments);
-            }), false);
+            //    TriggerClientEvent(player, "vgps:adjustVolume", arguments);
+            //}), false);
         }
     }
 }

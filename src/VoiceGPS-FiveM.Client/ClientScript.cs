@@ -281,18 +281,6 @@ namespace VoiceGPS_FiveM.Client
         public Ped GetPlayerPed()
         {
             return Game.PlayerPed;
-
-            //var ped = new OutputArgument();
-            //try
-            //{
-            //    Function.Call<Ped>(Hash.GET_PLAYER_PED, -1, ped);
-            //    return ped.GetResult<Ped>();
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e);
-            //    return null;
-            //}
         }
 
         private void Chat(string msg) =>

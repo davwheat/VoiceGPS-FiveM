@@ -38,11 +38,13 @@ namespace VoiceGPS_FiveM.Client
 
             Tick += OnTick;
 
-            _playerPed = GetPlayerPed();
+
         }
 
         private async Task OnTick()
         {
+            _playerPed = GetPlayerPed();
+            
             if (!_welcomeShowed)
             {
                 ShowNotification("~b~VoiceGPS~w~ | ~o~by github.com/davwheat");

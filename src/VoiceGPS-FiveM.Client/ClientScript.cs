@@ -47,8 +47,8 @@ namespace VoiceGPS_FiveM.Client
             
             if (!_welcomeShowed)
             {
-                ShowNotification("~b~VoiceGPS~w~ | ~o~by github.com/davwheat");
-                ShowNotification("~b~To enable GPS speech, type ~o~/vgps");
+                Chat("^1VoiceGPS | ^2by github.com/davwheat");
+                Chat("^1To enable GPS speech, type ^2/vgps");
                 _welcomeShowed = true;
             }
 

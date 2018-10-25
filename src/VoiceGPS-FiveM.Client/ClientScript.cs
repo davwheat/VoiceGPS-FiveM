@@ -10,7 +10,7 @@ namespace VoiceGPS_FiveM.Client
     public class ClientScript : BaseScript
     {
         private static Ped _playerPed;
-        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
+        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate, _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
         private bool _justPlayedArrived = true;
         private int _lastDirection;
 
@@ -37,16 +37,80 @@ namespace VoiceGPS_FiveM.Client
             //_welcomeShowed = true;
 
             Tick += OnTick;
+        }
 
-            _playerPed = GetPlayerPed();
+        private Tuple<string, string> GetStreetNameForDirection(Vector3 playerPos, int heading, int distance)
+        {
+            // North = Y+
+            // South = Y-
+            // East = X+
+            // West = X-
+
+            // if heading = 45, 
+
+            float xMult = 0;
+            float yMult = 0;
+
+            if (heading > 0 && heading <= 90)
+            {
+                xMult = heading / 90;
+                yMult = (90 - heading) / 90;
+            }
+            else if (heading > 90 && heading <= 180)
+            {
+                heading -= 90;
+                xMult = heading / 90;
+                yMult = (90 - heading) / -90;
+            }
+            else if (heading > 180 && heading <= 270)
+            {
+                heading -= 90;
+                xMult = heading / -90;
+                yMult = (90 - heading) / -90;
+            }
+            else if ((heading > 270 && heading <= 360) || heading == 0) // 0 and 360 are equal
+            {
+                heading -= 90;
+                xMult = heading / -90;
+                yMult = (90 - heading) / 90;
+            }
+
+            var roadPositionXY = new Vector2(playerPos.X + distance * xMult, playerPos.Y + distance * yMult);
+
+            float roadGroundZ = -1;
+            API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
+            if (roadGroundZ == -1F)
+                return null;
+
+            var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
+
+            var streetHash = new uint();
+            var streetXingHash = new uint();
+            API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);
+
+            var street = API.GetStreetNameFromHashKey(streetHash);
+            string streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
+
+            return new Tuple<string, string>(street, streetXing);
+        }
+
+        private string ConvertStreetNameToAudioFileName(string streetName)
+        {
+            streetName = streetName.ToLower();
+            streetName = streetName.Replace(' ', '_');
+            streetName = streetName.Replace('\'', '-');
+
+            return streetName;
         }
 
         private async Task OnTick()
         {
+            _playerPed = GetPlayerPed();
+
             if (!_welcomeShowed)
             {
-                ShowNotification("~b~VoiceGPS~w~ | ~o~by github.com/davwheat");
-                ShowNotification("~b~To enable GPS speech, type ~o~/vgps");
+                Chat("^1VoiceGPS | ^2by github.com/davwheat");
+                Chat("^1To enable GPS speech, type ^2/vgps");
                 _welcomeShowed = true;
             }
 
@@ -128,7 +192,7 @@ namespace VoiceGPS_FiveM.Client
                     PlayAudio("200m");
                     _justPlayed200M = true;
                     await Delay(2300);
-                    PlayDirectionAudio(dir);
+                    PlayDirectionAudio(dir, dist);
                 }
 
                 if (dist > 500 && dist < 1000 && !_justPlayed1000M && dir != 5)
@@ -136,13 +200,13 @@ namespace VoiceGPS_FiveM.Client
                     PlayAudio("1000m");
                     _justPlayed1000M = true;
                     await Delay(2300);
-                    PlayDirectionAudio(dir);
+                    PlayDirectionAudio(dir, dist);
                 }
 
                 if (!_justPlayedImmediate && dist < 55 && dist > 20 && dir != 5)
                 {
                     _justPlayedImmediate = true;
-                    PlayDirectionAudio(dir);
+                    PlayDirectionAudio(dir, dist);
                 }
                 else if (dist < 20 && dir != 5)
                 {
@@ -208,9 +272,18 @@ namespace VoiceGPS_FiveM.Client
             }
         }
 
-        private void PlayDirectionAudio(int dir)
+        private void PlayDirectionAudio(int dir, int dist)
         {
             //Chat("Attempting to play sound.");
+
+            var streets = GetStreetNameForDirection(_playerPed.Position, (int)_playerPed.Heading, dist);
+
+            var streetname = streets.Item1;
+
+            streetname = ConvertStreetNameToAudioFileName(streetname);
+
+            ShowNotification("Upcoming street (?):" + streetname);
+
             switch (dir)
             {
                 default:
@@ -231,11 +304,13 @@ namespace VoiceGPS_FiveM.Client
                 case 3:
                     // Turn left at next intersection
                     PlayAudio("turnleft");
+                    PlayAudio("streetnames/" + streetname);
                     break;
 
                 case 4:
                     // Turn right at next intersection
                     PlayAudio("turnright");
+                    PlayAudio("streetnames/" + streetname);
                     break;
 
                 case 5:
@@ -281,6 +356,18 @@ namespace VoiceGPS_FiveM.Client
         public Ped GetPlayerPed()
         {
             return Game.PlayerPed;
+
+            //var ped = new OutputArgument();
+            //try
+            //{
+            //    Function.Call<Ped>(Hash.GET_PLAYER_PED, -1, ped);
+            //    return ped.GetResult<Ped>();
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine(e);
+            //    return null;
+            //}
         }
 
         private void Chat(string msg) =>

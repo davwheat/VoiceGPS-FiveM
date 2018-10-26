@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
@@ -217,11 +218,21 @@ namespace VoiceGPS_FiveM.Client
             var streetname = streets.Item1;
             var xingstreetname = streets.Item2;
 
+
+            var pp = _playerPed.Position;
+            var hash = 0u;
+            var Xhash = 0u;
+            API.GetStreetNameAtCoord(pp.X, pp.Y, pp.Z, ref hash, ref Xhash);
+            var currentroad = API.GetStreetNameFromHashKey(hash);
+
+            var DontPlayStreetName = (currentroad == streetname);
+            
+
             streetname = ConvertStreetNameToAudioFileName(streetname);
-
             xingstreetname = xingstreetname != null ? ConvertStreetNameToAudioFileName(xingstreetname) : "N/A";
-
+#if DEBUG
             ShowNotification("Upcoming street: " + streetname + " |X| " + xingstreetname);
+#endif
 
             switch (dir)
             {
@@ -243,19 +254,26 @@ namespace VoiceGPS_FiveM.Client
                 case 3:
                     // Turn left at next intersection
                     PlayAudio("turnleft");
-                    await Delay(900);
-                    PlayAudio("onto");
-                    await Delay(340);
-                    PlayAudio("streetnames/" + streetname);
+                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    {
+                        await Delay(900);
+                        PlayAudio("onto");
+                        await Delay(500);
+                        PlayAudio("streetnames/" + streetname);
+                    }
+
                     break;
 
                 case 4:
                     // Turn right at next intersection
                     PlayAudio("turnright");
-                    await Delay(850);
-                    PlayAudio("onto");
-                    await Delay(340);
-                    PlayAudio("streetnames/" + streetname);
+                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    {
+                        await Delay(900);
+                        PlayAudio("onto");
+                        await Delay(500);
+                        PlayAudio("streetnames/" + streetname);
+                    }
                     break;
 
                 case 5:
@@ -374,12 +392,21 @@ namespace VoiceGPS_FiveM.Client
             streetName = streetName.Replace(' ', '_');
             streetName = streetName.Replace('\'', '-');
             streetName = streetName.Replace("_ave", "_avenue");
-            streetName = streetName.Replace("_blvd", "_boulevard");
-            streetName = streetName.Replace("_pkwy", "_parkway");
-            streetName = streetName.Replace("_dr", "_drive");
-            streetName = streetName.Replace("_rd", "_road");
-            streetName = streetName.Replace("_st", "_street");
-            streetName = streetName.Replace("_pl", "_place");
+
+            if (streetName.EndsWith("_blvd"))
+                streetName = streetName.Remove(streetName.Length - 4) + "boulevard";
+            else if (streetName.EndsWith("_pkwy"))
+                streetName = streetName.Remove(streetName.Length - 4) + "parkway";
+            else if (streetName.EndsWith("_ave"))
+                streetName = streetName.Remove(streetName.Length - 3) + "avenue";
+            else if (streetName.EndsWith("_dr"))
+                streetName = streetName.Remove(streetName.Length - 2) + "drive";
+            else if (streetName.EndsWith("_rd"))
+                streetName = streetName.Remove(streetName.Length - 2) + "road";
+            else if (streetName.EndsWith("_st"))
+                streetName = streetName.Remove(streetName.Length - 2) + "street";
+            else if (streetName.EndsWith("_pl"))
+                streetName = streetName.Remove(streetName.Length - 2) + "place";
 
             return streetName;
         }

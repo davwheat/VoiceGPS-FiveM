@@ -208,17 +208,20 @@ namespace VoiceGPS_FiveM.Client
             }
         }
 
-        private void PlayDirectionAudio(int dir, int dist)
+        private async Task PlayDirectionAudio(int dir, int dist)
         {
             //Chat("Attempting to play sound.");
 
-            var streets = GetStreetNameForDirection(_playerPed.Position, (int)_playerPed.Heading, dist);
+            var streets = GetStreetNameForDirection(dist);
 
             var streetname = streets.Item1;
+            var xingstreetname = streets.Item2;
 
             streetname = ConvertStreetNameToAudioFileName(streetname);
 
-            ShowNotification("Upcoming street (?):" + streetname);
+            xingstreetname = xingstreetname != null ? ConvertStreetNameToAudioFileName(xingstreetname) : "N/A";
+
+            ShowNotification("Upcoming street: " + streetname + " |X| " + xingstreetname);
 
             switch (dir)
             {
@@ -240,12 +243,18 @@ namespace VoiceGPS_FiveM.Client
                 case 3:
                     // Turn left at next intersection
                     PlayAudio("turnleft");
+                    await Delay(900);
+                    PlayAudio("onto");
+                    await Delay(340);
                     PlayAudio("streetnames/" + streetname);
                     break;
 
                 case 4:
                     // Turn right at next intersection
                     PlayAudio("turnright");
+                    await Delay(850);
+                    PlayAudio("onto");
+                    await Delay(340);
                     PlayAudio("streetnames/" + streetname);
                     break;
 
@@ -312,7 +321,6 @@ namespace VoiceGPS_FiveM.Client
         private void ShowNotification(string msg, bool blinking = false) =>
             Screen.ShowNotification(msg, blinking);
 
-
         private void PlayAudio(string filename)
         {
             var json =
@@ -324,9 +332,7 @@ namespace VoiceGPS_FiveM.Client
             API.SendNuiMessage(json);
         }
 
-
-
-        private Tuple<string, string> GetStreetNameForDirection(Vector3 playerPos, int heading, int distance)
+        private Tuple<string, string> GetStreetNameForDirection(int distance)
         {
             // North = Y+
             // South = Y-
@@ -335,48 +341,29 @@ namespace VoiceGPS_FiveM.Client
 
             // if heading = 45, 
 
-            float xMult = 0;
-            float yMult = 0;
+            double offsetX = 0;
+            double offsetY = 0;
 
-            if (heading > 0 && heading <= 90)
-            {
-                xMult = heading / 90;
-                yMult = (90 - heading) / 90;
-            }
-            else if (heading > 90 && heading <= 180)
-            {
-                heading -= 90;
-                xMult = heading / 90;
-                yMult = (90 - heading) / -90;
-            }
-            else if (heading > 180 && heading <= 270)
-            {
-                heading -= 90;
-                xMult = heading / -90;
-                yMult = (90 - heading) / -90;
-            }
-            else if ((heading > 270 && heading <= 360) || heading == 0) // 0 and 360 are equal
-            {
-                heading -= 90;
-                xMult = heading / -90;
-                yMult = (90 - heading) / 90;
-            }
+            var coords = Game.PlayerPed.Position + Game.PlayerPed.ForwardVector * distance;
 
-            var roadPositionXY = new Vector2(playerPos.X + distance * xMult, playerPos.Y + distance * yMult);
+            var roadPositionXY = new Vector2(coords.X, coords.Y);
+
 
             float roadGroundZ = -1;
             API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
             if (roadGroundZ == -1F)
                 return null;
-
+            
             var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
+
+            Chat("rc: " + roadPositionXYZ.X + " " + roadPositionXYZ.Y + " " + roadPositionXYZ.Z);
 
             var streetHash = new uint();
             var streetXingHash = new uint();
             API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);
 
             var street = API.GetStreetNameFromHashKey(streetHash);
-            string streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
+            var streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
 
             return new Tuple<string, string>(street, streetXing);
         }
@@ -386,6 +373,13 @@ namespace VoiceGPS_FiveM.Client
             streetName = streetName.ToLower();
             streetName = streetName.Replace(' ', '_');
             streetName = streetName.Replace('\'', '-');
+            streetName = streetName.Replace("_ave", "_avenue");
+            streetName = streetName.Replace("_blvd", "_boulevard");
+            streetName = streetName.Replace("_pkwy", "_parkway");
+            streetName = streetName.Replace("_dr", "_drive");
+            streetName = streetName.Replace("_rd", "_road");
+            streetName = streetName.Replace("_st", "_street");
+            streetName = streetName.Replace("_pl", "_place");
 
             return streetName;
         }

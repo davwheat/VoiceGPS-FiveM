@@ -1,24 +1,27 @@
-resource_manifest_version '44febabe-d386-4d18-afbe-5e627f4af937'
+resource_manifest_version "44febabe-d386-4d18-afbe-5e627f4af937"
 
 server_script "VoiceGPS_FiveM.Server.net.dll"
 client_script "VoiceGPS_FiveM.Client.net.dll"
 
-ui_page 'html/index.html'
+ui_page "html/index.html"
 
 files {
-    'html/index.html',
-    'html/audio/200m.ogg',
-    'html/audio/1000m.ogg',
-    'html/audio/arrived.ogg',
-    'html/audio/continue.ogg',
-    'html/audio/keepleft.ogg',
-    'html/audio/keepright.ogg',
-    'html/audio/recalculating.ogg',
-    'html/audio/straight.ogg',
-    'html/audio/start.ogg',
-    'html/audio/turnleft.ogg',
-    'html/audio/turnright.ogg',
-    "html/streetnames/abattoir_avenue.ogg",
+    -- "html/audio/streetnames/baytree_canyon_road.ogg",
+    -- "html/audio/streetnames/galileo_road.ogg",
+    -- "html/audio/streetnames/mount_haan_road.ogg",
+    "html/index.html",
+    "html/audio/200m.ogg",
+    "html/audio/1000m.ogg",
+    "html/audio/arrived.ogg",
+    "html/audio/continue.ogg",
+    "html/audio/keepleft.ogg",
+    "html/audio/keepright.ogg",
+    "html/audio/onto.ogg",
+    "html/audio/recalculating.ogg",
+    "html/audio/straight.ogg",
+    "html/audio/start.ogg",
+    "html/audio/turnleft.ogg",
+    "html/audio/turnright.ogg",
     "html/audio/streetnames/abattoir_avenue.ogg",
     "html/audio/streetnames/abe_milton_parkway.ogg",
     "html/audio/streetnames/ace_jones_drive.ogg",
@@ -196,7 +199,6 @@ files {
     "html/audio/streetnames/algonquin_boulevard.ogg",
     "html/audio/streetnames/alhambra_drive.ogg",
     "html/audio/streetnames/armadillo_avenue.ogg",
-    "html/audio/streetnames/baytree_canyon_road.ogg",
     "html/audio/streetnames/calafia_road.ogg",
     "html/audio/streetnames/cascabel_avenue.ogg",
     "html/audio/streetnames/cassidy_trail.ogg",
@@ -207,7 +209,6 @@ files {
     "html/audio/streetnames/duluoz_avenue.ogg",
     "html/audio/streetnames/east_joshua_road.ogg",
     "html/audio/streetnames/fort_zancudo_approach_road.ogg",
-    "html/audio/streetnames/galileo_road.ogg",
     "html/audio/streetnames/grapeseed_avenue.ogg",
     "html/audio/streetnames/grapeseed_main_street.ogg",
     "html/audio/streetnames/joad_lane.ogg",
@@ -216,7 +217,6 @@ files {
     "html/audio/streetnames/lolita_avenue.ogg",
     "html/audio/streetnames/marina_drive.ogg",
     "html/audio/streetnames/meringue_lane.ogg",
-    "html/audio/streetnames/mount_haan_road.ogg",
     "html/audio/streetnames/mountain_view_drive.ogg",
     "html/audio/streetnames/niland_avenue.ogg",
     "html/audio/streetnames/north_calafia_way.ogg",
@@ -252,5 +252,5 @@ files {
     "html/audio/streetnames/route_20.ogg",
     "html/audio/streetnames/route_22.ogg",
     "html/audio/streetnames/route_23.ogg",
-    "html/audio/streetnames/route_68.ogg"
+    "html/audio/streetnames/route_68.ogg",
 }

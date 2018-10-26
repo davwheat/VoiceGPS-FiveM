@@ -13,7 +13,7 @@ namespace VoiceGPS_FiveM.Client
         private static Ped _playerPed;
         private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate, _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
         private bool _justPlayedArrived = true;
-        private int _lastDirection;
+        private int _lastDirection, _lastDistance;
 
         // User editable variables
 
@@ -115,9 +115,9 @@ namespace VoiceGPS_FiveM.Client
                 //5: On the next intersection, go straight. (distance on p6)
                 //6: Take the next return to the left. (distance on p6)
                 //7: Take the next return to the right. (distance on p6)
-                //8: NO idea...similar to 6 in some way
+                //8: Exit motorway
 
-                if (_lastDirection != dir)
+                if (_lastDirection != dir || (_lastDirection == dir && _lastDistance < dist))
                 {
                     _justPlayed200M = false;
                     _justPlayedImmediate = false;
@@ -128,7 +128,7 @@ namespace VoiceGPS_FiveM.Client
                 {
                     PlayAudio("200m");
                     _justPlayed200M = true;
-                    await Delay(2300);
+                    await Delay(2100);
                     PlayDirectionAudio(dir, dist);
                 }
 
@@ -136,7 +136,7 @@ namespace VoiceGPS_FiveM.Client
                 {
                     PlayAudio("1000m");
                     _justPlayed1000M = true;
-                    await Delay(2300);
+                    await Delay(2200);
                     PlayDirectionAudio(dir, dist);
                 }
 
@@ -175,6 +175,8 @@ namespace VoiceGPS_FiveM.Client
                 }
 
                 _lastDirection = dir;
+                _lastDistance = dist;
+
                 _justPlayedArrived = true;
 
                 //ShowNotification(DirectionToString(dir));
@@ -205,7 +207,7 @@ namespace VoiceGPS_FiveM.Client
                 case 7:
                     return $"Keep right (7)";
                 case 8:
-                    return $"Unknown (8)";
+                    return $"Exit motorway (8)";
             }
         }
 
@@ -286,6 +288,10 @@ namespace VoiceGPS_FiveM.Client
                     // Driver went wrong way -- remaking route
                     PlayAudio("recalculating");
                     break;
+
+                case 8:
+                    PlayAudio("exitMotorwayToRight");
+                    break;
             }
         }
 
@@ -357,11 +363,6 @@ namespace VoiceGPS_FiveM.Client
             // East = X+
             // West = X-
 
-            // if heading = 45, 
-
-            double offsetX = 0;
-            double offsetY = 0;
-
             var coords = Game.PlayerPed.Position + Game.PlayerPed.ForwardVector * distance;
 
             var roadPositionXY = new Vector2(coords.X, coords.Y);
@@ -407,6 +408,8 @@ namespace VoiceGPS_FiveM.Client
                 streetName = streetName.Remove(streetName.Length - 2) + "street";
             else if (streetName.EndsWith("_pl"))
                 streetName = streetName.Remove(streetName.Length - 2) + "place";
+            else if (streetName.EndsWith("_ln"))
+                streetName = streetName.Remove(streetName.Length - 2) + "lane";
 
             return streetName;
         }

@@ -22,6 +22,7 @@ files {
     "html/audio/start.ogg",
     "html/audio/turnleft.ogg",
     "html/audio/turnright.ogg",
+    "html/audio/exitMotorwayToRight.ogg",
     "html/audio/streetnames/abattoir_avenue.ogg",
     "html/audio/streetnames/abe_milton_parkway.ogg",
     "html/audio/streetnames/ace_jones_drive.ogg",

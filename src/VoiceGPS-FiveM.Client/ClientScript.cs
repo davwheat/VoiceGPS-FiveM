@@ -37,8 +37,6 @@ namespace VoiceGPS_FiveM.Client
             //_welcomeShowed = true;
 
             Tick += OnTick;
-
-
         }
 
         private async Task OnTick()

@@ -137,7 +137,7 @@ namespace VoiceGPS_FiveM.Client
                     PlayAudio("200m");
                     _justPlayed200M = true;
                     await Delay(2100);
-                    PlayDirectionAudio(dir, dist);
+                    await PlayDirectionAudio(dir, dist);
                 }
 
                 if (dist > 500 && dist < 1000 && !_justPlayed1000M && dir != 5)
@@ -145,13 +145,13 @@ namespace VoiceGPS_FiveM.Client
                     PlayAudio("1000m");
                     _justPlayed1000M = true;
                     await Delay(2200);
-                    PlayDirectionAudio(dir, dist);
+                    await PlayDirectionAudio(dir, dist);
                 }
 
                 if (!_justPlayedImmediate && dist < 55 && dist > 20 && dir != 5)
                 {
                     _justPlayedImmediate = true;
-                    PlayDirectionAudio(dir, dist);
+                    await PlayDirectionAudio(dir, dist);
                 }
                 else if (dist < 20 && dir != 5)
                 {
@@ -225,23 +225,28 @@ namespace VoiceGPS_FiveM.Client
 
             var streets = GetStreetNameForDirection(dist);
 
-            var streetname = streets.Item1;
-            var xingstreetname = streets.Item2;
+            var roadName = streets.Item1;
+            var crossingRoadName = streets.Item2;
 
-
-            var pp = _playerPed.Position;
+            var playerPosition = _playerPed.Position;
             var hash = 0u;
-            var Xhash = 0u;
-            API.GetStreetNameAtCoord(pp.X, pp.Y, pp.Z, ref hash, ref Xhash);
-            var currentroad = API.GetStreetNameFromHashKey(hash);
+            var crossingRoadHash = 0u;
 
-            var DontPlayStreetName = (currentroad == streetname);
+            API.GetStreetNameAtCoord(
+                playerPosition.X, 
+                playerPosition.Y,
+                playerPosition.Z,
+                ref hash, ref crossingRoadHash);
+
+            var currentRoad = API.GetStreetNameFromHashKey(hash);
+
+            var dontPlayStreetName = (currentRoad == roadName);
             
 
-            streetname = ConvertStreetNameToAudioFileName(streetname);
-            xingstreetname = xingstreetname != null ? ConvertStreetNameToAudioFileName(xingstreetname) : "N/A";
+            roadName = ConvertStreetNameToAudioFileName(roadName);
+            crossingRoadName = crossingRoadName != null ? ConvertStreetNameToAudioFileName(crossingRoadName) : "N/A";
 #if DEBUG
-            ShowNotification("Upcoming street: " + streetname + " |X| " + xingstreetname);
+            ShowNotification("Upcoming street: " + roadName + " |X| " + crossingRoadName);
 #endif
 
             switch (dir)
@@ -264,12 +269,13 @@ namespace VoiceGPS_FiveM.Client
                 case 3:
                     // Turn left at next intersection
                     PlayAudio("turnleft");
-                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    if (dist < 175 && dist > 30 && !dontPlayStreetName)
                     {
                         await Delay(900);
                         PlayAudio("onto");
                         await Delay(500);
-                        PlayAudio("streetnames/" + streetname);
+                        PlayAudio("streetnames/" + roadName);
+                        await Delay(1250); // Generic time wait to prevent audio overlapping
                     }
 
                     break;
@@ -277,19 +283,20 @@ namespace VoiceGPS_FiveM.Client
                 case 4:
                     // Turn right at next intersection
                     PlayAudio("turnright");
-                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    if (dist < 175 && dist > 30 && !dontPlayStreetName)
                     {
                         await Delay(900);
                         PlayAudio("onto");
                         await Delay(500);
-                        PlayAudio("streetnames/" + streetname);
+                        PlayAudio("streetnames/" + roadName);
+                        await Delay(1250); // Generic time wait to prevent audio overlapping
                     }
                     break;
 
                 case 5:
                     // Straight ahead at next intersection
                     // Played way too much
-                    //PlayAudio("straight");
+                    // PlayAudio("straight");
                     break;
 
                 case 1:
@@ -364,23 +371,26 @@ namespace VoiceGPS_FiveM.Client
             API.SendNuiMessage(json);
         }
 
-        private Tuple<string, string> GetStreetNameForDirection(int distance)
+        private Tuple<string, string> GetStreetNameForDirection(int distance, Vector3? xyOffset = null)
         {
             // North = Y+
             // South = Y-
             // East = X+
             // West = X-
 
-            var coords = Game.PlayerPed.Position + Game.PlayerPed.ForwardVector * distance;
+            if (!xyOffset.HasValue)
+                xyOffset = new Vector3(0, 0, 0);
 
+            Vector3 coords = Game.PlayerPed.Position + (Game.PlayerPed.ForwardVector * distance) + (Vector3) xyOffset;
+            // ReSharper disable once InconsistentNaming
             var roadPositionXY = new Vector2(coords.X, coords.Y);
-
 
             float roadGroundZ = -1;
             API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
             if (roadGroundZ == -1F)
                 return null;
             
+            // ReSharper disable once InconsistentNaming
             var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
 
             Chat("rc: " + roadPositionXYZ.X + " " + roadPositionXYZ.Y + " " + roadPositionXYZ.Z);

@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Comment out the applicable lines below if you don't want to use them
+#define ENABLEKEYBIND
+#define ENABLECOMMAND
+
+using System;
 using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
 using CitizenFX.Core;
@@ -21,6 +25,7 @@ namespace VoiceGPS_FiveM.Client
         private double _audioVolume = 0.7;
 
         private const Control ToggleVGPSKeybind = Control.DropAmmo; // F10
+
         private const bool IsKeybindEnabled = true;
 
         private const bool IsCommandEnabled = true;
@@ -29,10 +34,11 @@ namespace VoiceGPS_FiveM.Client
         public ClientScript()
         {
             Chat("VGPS Loaded");
-            EventHandlers.Add("vgps:toggleVGPS",
-                IsCommandEnabled
-                    ? new Action(ToggleVgps)
-                    : new Action(() => ShowNotification("~r~The command has been disabled. Please use the set keybind instead.")));
+#if ENABLECOMMAND
+            EventHandlers.Add("vgps:toggleVGPS", new Action(ToggleVgps));
+#else
+            EventHandlers.Add("vgps:toggleVGPS", new Action(() => ShowNotification("~r~The command has been disabled. Please use the set keybind instead.")));
+#endif
 
             // UNCOMMENT BELOW LINE TO REMOVE THE WELCOME MESSAGE
             //_welcomeShowed = true;
@@ -51,10 +57,12 @@ namespace VoiceGPS_FiveM.Client
                 _welcomeShowed = true;
             }
 
-            if (IsKeybindEnabled && Game.IsControlJustReleased(1, ToggleVGPSKeybind))
+#if ENABLEKEYBIND
+            if (Game.IsControlJustReleased(1, ToggleVGPSKeybind))
             {
                 ToggleVgps();
             }
+#endif
 
             if (_playerPed.IsInVehicle() && _voiceGpsEnabled)
             {

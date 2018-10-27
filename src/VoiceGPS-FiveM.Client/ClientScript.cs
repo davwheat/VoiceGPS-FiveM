@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
@@ -10,9 +11,9 @@ namespace VoiceGPS_FiveM.Client
     public class ClientScript : BaseScript
     {
         private static Ped _playerPed;
-        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate,  _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
+        private bool _justPlayed1000M, _justPlayed200M, _justPlayedFollowRoad, _justPlayedImmediate, _playedStartDriveAudio, _justPlayedRecalc, _voiceGpsEnabled, _welcomeShowed;
         private bool _justPlayedArrived = true;
-        private int _lastDirection;
+        private int _lastDirection, _lastDistance;
 
         // User editable variables
 
@@ -42,7 +43,7 @@ namespace VoiceGPS_FiveM.Client
         private async Task OnTick()
         {
             _playerPed = GetPlayerPed();
-            
+
             if (!_welcomeShowed)
             {
                 Chat("^1VoiceGPS | ^2by github.com/davwheat");
@@ -114,9 +115,9 @@ namespace VoiceGPS_FiveM.Client
                 //5: On the next intersection, go straight. (distance on p6)
                 //6: Take the next return to the left. (distance on p6)
                 //7: Take the next return to the right. (distance on p6)
-                //8: NO idea...similar to 6 in some way
+                //8: Exit motorway
 
-                if (_lastDirection != dir)
+                if (_lastDirection != dir || (_lastDirection == dir && _lastDistance < dist))
                 {
                     _justPlayed200M = false;
                     _justPlayedImmediate = false;
@@ -127,22 +128,22 @@ namespace VoiceGPS_FiveM.Client
                 {
                     PlayAudio("200m");
                     _justPlayed200M = true;
-                    await Delay(2300);
-                    PlayDirectionAudio(dir);
+                    await Delay(2100);
+                    PlayDirectionAudio(dir, dist);
                 }
 
                 if (dist > 500 && dist < 1000 && !_justPlayed1000M && dir != 5)
                 {
                     PlayAudio("1000m");
                     _justPlayed1000M = true;
-                    await Delay(2300);
-                    PlayDirectionAudio(dir);
+                    await Delay(2200);
+                    PlayDirectionAudio(dir, dist);
                 }
 
                 if (!_justPlayedImmediate && dist < 55 && dist > 20 && dir != 5)
                 {
                     _justPlayedImmediate = true;
-                    PlayDirectionAudio(dir);
+                    PlayDirectionAudio(dir, dist);
                 }
                 else if (dist < 20 && dir != 5)
                 {
@@ -174,6 +175,8 @@ namespace VoiceGPS_FiveM.Client
                 }
 
                 _lastDirection = dir;
+                _lastDistance = dist;
+
                 _justPlayedArrived = true;
 
                 //ShowNotification(DirectionToString(dir));
@@ -204,13 +207,35 @@ namespace VoiceGPS_FiveM.Client
                 case 7:
                     return $"Keep right (7)";
                 case 8:
-                    return $"Unknown (8)";
+                    return $"Exit motorway (8)";
             }
         }
 
-        private void PlayDirectionAudio(int dir)
+        private async Task PlayDirectionAudio(int dir, int dist)
         {
             //Chat("Attempting to play sound.");
+
+            var streets = GetStreetNameForDirection(dist);
+
+            var streetname = streets.Item1;
+            var xingstreetname = streets.Item2;
+
+
+            var pp = _playerPed.Position;
+            var hash = 0u;
+            var Xhash = 0u;
+            API.GetStreetNameAtCoord(pp.X, pp.Y, pp.Z, ref hash, ref Xhash);
+            var currentroad = API.GetStreetNameFromHashKey(hash);
+
+            var DontPlayStreetName = (currentroad == streetname);
+            
+
+            streetname = ConvertStreetNameToAudioFileName(streetname);
+            xingstreetname = xingstreetname != null ? ConvertStreetNameToAudioFileName(xingstreetname) : "N/A";
+#if DEBUG
+            ShowNotification("Upcoming street: " + streetname + " |X| " + xingstreetname);
+#endif
+
             switch (dir)
             {
                 default:
@@ -231,11 +256,26 @@ namespace VoiceGPS_FiveM.Client
                 case 3:
                     // Turn left at next intersection
                     PlayAudio("turnleft");
+                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    {
+                        await Delay(900);
+                        PlayAudio("onto");
+                        await Delay(500);
+                        PlayAudio("streetnames/" + streetname);
+                    }
+
                     break;
 
                 case 4:
                     // Turn right at next intersection
                     PlayAudio("turnright");
+                    if (dist < 175 && dist > 30 && !DontPlayStreetName)
+                    {
+                        await Delay(900);
+                        PlayAudio("onto");
+                        await Delay(500);
+                        PlayAudio("streetnames/" + streetname);
+                    }
                     break;
 
                 case 5:
@@ -247,6 +287,10 @@ namespace VoiceGPS_FiveM.Client
                 case 1:
                     // Driver went wrong way -- remaking route
                     PlayAudio("recalculating");
+                    break;
+
+                case 8:
+                    PlayAudio("exitMotorwayToRight");
                     break;
             }
         }
@@ -301,7 +345,6 @@ namespace VoiceGPS_FiveM.Client
         private void ShowNotification(string msg, bool blinking = false) =>
             Screen.ShowNotification(msg, blinking);
 
-
         private void PlayAudio(string filename)
         {
             var json =
@@ -311,6 +354,64 @@ namespace VoiceGPS_FiveM.Client
 #endif
 
             API.SendNuiMessage(json);
+        }
+
+        private Tuple<string, string> GetStreetNameForDirection(int distance)
+        {
+            // North = Y+
+            // South = Y-
+            // East = X+
+            // West = X-
+
+            var coords = Game.PlayerPed.Position + Game.PlayerPed.ForwardVector * distance;
+
+            var roadPositionXY = new Vector2(coords.X, coords.Y);
+
+
+            float roadGroundZ = -1;
+            API.GetGroundZFor_3dCoord(roadPositionXY.X, roadPositionXY.Y, 10000, ref roadGroundZ, false);
+            if (roadGroundZ == -1F)
+                return null;
+            
+            var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
+
+            Chat("rc: " + roadPositionXYZ.X + " " + roadPositionXYZ.Y + " " + roadPositionXYZ.Z);
+
+            var streetHash = new uint();
+            var streetXingHash = new uint();
+            API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);
+
+            var street = API.GetStreetNameFromHashKey(streetHash);
+            var streetXing = streetXingHash == 0 ? API.GetStreetNameFromHashKey(streetXingHash) : null;
+
+            return new Tuple<string, string>(street, streetXing);
+        }
+
+        private string ConvertStreetNameToAudioFileName(string streetName)
+        {
+            streetName = streetName.ToLower();
+            streetName = streetName.Replace(' ', '_');
+            streetName = streetName.Replace('\'', '-');
+            streetName = streetName.Replace("_ave", "_avenue");
+
+            if (streetName.EndsWith("_blvd"))
+                streetName = streetName.Remove(streetName.Length - 4) + "boulevard";
+            else if (streetName.EndsWith("_pkwy"))
+                streetName = streetName.Remove(streetName.Length - 4) + "parkway";
+            else if (streetName.EndsWith("_ave"))
+                streetName = streetName.Remove(streetName.Length - 3) + "avenue";
+            else if (streetName.EndsWith("_dr"))
+                streetName = streetName.Remove(streetName.Length - 2) + "drive";
+            else if (streetName.EndsWith("_rd"))
+                streetName = streetName.Remove(streetName.Length - 2) + "road";
+            else if (streetName.EndsWith("_st"))
+                streetName = streetName.Remove(streetName.Length - 2) + "street";
+            else if (streetName.EndsWith("_pl"))
+                streetName = streetName.Remove(streetName.Length - 2) + "place";
+            else if (streetName.EndsWith("_ln"))
+                streetName = streetName.Remove(streetName.Length - 2) + "lane";
+
+            return streetName;
         }
     }
 }

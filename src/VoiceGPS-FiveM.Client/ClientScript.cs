@@ -373,8 +373,6 @@ namespace VoiceGPS_FiveM.Client
             // ReSharper disable once InconsistentNaming
             var roadPositionXYZ = new Vector3(roadPositionXY.X, roadPositionXY.Y, roadGroundZ);
 
-            Chat("rc: " + roadPositionXYZ.X + " " + roadPositionXYZ.Y + " " + roadPositionXYZ.Z);
-
             var streetHash = new uint();
             var streetXingHash = new uint();
             API.GetStreetNameAtCoord(roadPositionXYZ.X, roadPositionXYZ.Y, roadPositionXYZ.Z, ref streetHash, ref streetXingHash);

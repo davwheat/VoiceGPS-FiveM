@@ -1,10 +1,8 @@
 ﻿// Comment out the applicable lines below if you don't want to use them
-#define ENABLEKEYBIND
+//#define ENABLEKEYBIND
 #define ENABLECOMMAND
 
 using System;
-using System.Diagnostics.Eventing.Reader;
-using System.Reflection;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using System.Threading.Tasks;
